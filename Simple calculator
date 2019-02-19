@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<title>Dawid's simple calculator</title>
+<head>
+	<script type="text/javascript">
+		
+		var a, b;
+
+
+		function setValues() 
+		{
+			a = Number(document.getElementById("a").value); // it obtains the element by ID
+			b = Number(document.getElementById("b").value);
+		}
+
+		function sum()
+		{
+			setValues();
+			result = a+b;
+			alert("The sum of " + a + " and " + b + " is equal to " + result);
+		}
+
+
+		function rest()
+		{
+			setValues();
+			result = a-b;
+			alert("The rest of " + a + " and " + b + " is equal to " + result);
+		}
+
+
+		function mult()
+		{
+			setValues();
+			result = a*b;
+			alert( a + " times " + b + " is equal to " + result);
+		}
+
+
+		function div()
+		{
+			setValues();
+			result = a/b;
+			alert(a + " divided by " + b + " is equal to " + result);
+		}
+
+
+	</script>
+
+</head>
+<body>
+	<div>
+		<output>Hello and welcome to my simple calculator! <br/>
+				Put your numbers in the following brackets and let it do the operations. <br/>
+		<br/>
+		</output>
+		<input id="a" type="text"/>
+		<input id="b" type="text"/>
+		<input type="button" onclick="sum()" value="sum"/>
+		<input type="button" onclick="rest()" value="rest"/>
+		<input type="button" onclick="mult()" value="multiply"/>
+		<input type="button" onclick="div()" value="divide"/>
+	</div>
+</body>
+</html>
