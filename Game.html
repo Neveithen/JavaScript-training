@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<style>
+
+#hero {
+	background: #11EF45;
+	width: 20px;
+	height: 20px;
+	position: absolute;
+}
+
+#background {
+	background: #000000;
+	width: 500px;
+	height: 500px;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+}
+
+#laser {
+	background: #ff0000;
+	width: 3px;
+	height: 50px;
+	position: absolute;
+}
+
+.enemy {
+	background: #0000ff;
+	width: 35px;
+	height: 35px;
+	position: absolute;
+}
+
+#score {
+	color:#ffffff;
+	font-size: 18pt;
+	position: absolute;
+	left: 20px;
+	top: 20px;
+}
+
+#gameover {
+	color: #ff0000;
+	font-size: 20px;
+	position: absolute;
+	left: 200px;
+	top: 200px;
+	visibility: hidden;
+}
+
+</style>
+
+<title>Space Invaders</title>
+</head>
+
+<body>
+
+<div id="background"></div>
+<div id="hero"></div>
+<div id="laser"></div>
+<div id="score"></div>
+<div id="gameover">GAME OVER</div>
+
+<script>
+
+// ATTENTION - # sign indicates that I'm referring to an Id, .smth means class
+
+//MOVEMENT - keys are numered according to the javascript console in Google Chrome
+// I have to asign the numbers to particular variables below
+
+var LEFT_KEY = 37;
+var UP_KEY = 38;
+var RIGHT_KEY = 39;
+var DOWN_KEY = 40;
+var SPACE_KEY = 32;
+var HERO_MOVEMENT = 4;
+
+
+var lastLoopRun = 0;
+var score = 0;
+var iterations = 0;
+
+
+var controller = new Object();
+var enemies = new Array();
+
+function createSprite(element, x, y, w, h) {
+	var result = new Object();
+	result.element = element;
+	result.x = x;
+	result.y = y;
+	result.w = w;
+	result.h = h;
+	return result;
+}
+
+//this function allows my key to work; I needed to assign the key codes first
+function toggleKey(keyCode, isPressed){
+	if (keyCode == LEFT_KEY) {
+		controller.left = isPressed;
+	}
+	if (keyCode == RIGHT_KEY) {
+		controller.right = isPressed;
+	}
+	if (keyCode == UP_KEY) {
+		controller.up = isPressed;
+	}
+	if (keyCode == DOWN_KEY) {
+		controller.down = isPressed;
+	}
+	if (keyCode == SPACE_KEY) {
+		controller.space = isPressed;
+	}
+}
+
+//that will tell us if the two objects intersect
+function intersects(a, b) {
+	return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+//this ensures that the sprites stay in the game area
+function ensureBounds(sprite, ignoreY) {
+	if (sprite.x < 20) {
+		sprite.x = 20;
+	}
+	if (!ignoreY && sprite.y < 20) {
+		sprite.y = 20;
+	}
+	if (sprite.x + sprite.w > 480) {
+		sprite.x = 480 - sprite.w; //width
+	}
+	if (!ignoreY && sprite.y + sprite.h > 480) {
+		sprite.y = 480 - sprite.h; //height
+	}
+}
+
+function setPosition(sprite) {
+	var e = document.getElementById(sprite.element);
+	e.style.left = sprite.x + 'px';
+	e.style.top = sprite.y + 'px';
+}
+
+function handleControls() { //it allows me to interact with my controlers
+	if (controller.up) {
+		hero.y -= HERO_MOVEMENT; // my hero moves up
+	}
+	if (controller.down) {
+		hero.y += HERO_MOVEMENT; // my hero moves down
+	}
+	if (controller.right) {
+		hero.x += HERO_MOVEMENT; // my hero moves right
+	}
+	if (controller.left) {
+		hero.x -= HERO_MOVEMENT; // my hero moves left
+	}
+	if (controller.space && laser.y <= -120) { // statement after && tells the program to only allow new laser to appear when it's -120 pixels away from the hero
+		laser.x = hero.x + 9; // left corner of my hero + 9 pixels (it's about 20 in total)
+		laser.y = hero.y - laser.h;
+	}
+
+	ensureBounds(hero);
+}
+
+//this function checks all the possible collisions
+function checkCollisions() {
+	for (var i = 0; i < enemies.length; i++) {
+		if (intersects(laser, enemies[i])) {
+			var element = document.getElementById(enemies[i].element);
+			element.style.visibility = 'hidden';
+			element.parentNode.removeChild(element);
+			enemies.splice(i, 1);
+			i--;
+			laser.y = -laser.h; // it should destroy the laser after collision
+			score += 10;
+		} else if (intersects(hero, enemies[i])) { // this should kill our hero
+			gameOver();;
+		}
+		else if (enemies[i].y + enemies[i].h >= 500) { // this will prevent from going endlessly to the bottom
+
+			var element = document.getElementById(enemies[i].element);
+			element.style.visibility = 'hidden';
+			element.parentNode.removeChild(element);
+			enemies.splice(i, 1);
+			i--;
+		}
+	}
+}
+
+function gameOver() {
+	var element = document.getElementById(hero.element);
+	element.style.visibility = 'hidden';
+	element = document.getElementById('gameover');
+	element.style.visibility = 'visible';
+}
+
+function showSprites() {
+	setPosition(hero);
+	setPosition(laser);
+	for (var i = 0; i < enemies.length; i++) {
+		setPosition(enemies[i]);
+	}
+	var scoreElement = document.getElementById('score');
+	scoreElement.innerHTML = 'SCORE: ' + score;
+}
+
+function updatePositions() {
+	for (var i = 0; i < enemies.length; i++) { // for i incrementing from zero
+		enemies[i].y += 4;
+		enemies[i].x += getRandom(7) - 3; // enemies are going to move between 0-7
+		ensureBounds(enemies[i], true);
+	}
+	laser.y -= 10; // the laser travels with 10 pixels by milisecond
+}
+
+function addEnemy() { // it connects with the idea of randomness
+	var interval = 50; // every 50 times new enemy (?)
+	if (iterations > 1500) {
+		interval = 15;
+	} else if (iterations > 1000) {
+		interval = 20;
+	} else if (iterations > 500) {
+		interval = 35;
+	}
+
+	if (getRandom(50) == 0) { // new enemy about every 2 seconds, 50 is the max size
+		var elementName = 'enemy' + getRandom(10000000);
+		var enemy = createSprite(elementName, getRandom(450), -40, 35, 35); // -40, so off the screen)
+		var element = document.createElement('div');
+		element.id = enemy.element;
+		element.className = 'enemy';
+		document.children[0].appendChild(element); // it appends it to the html
+
+		enemies[enemies.length] = enemy;
+	}
+}
+
+function getRandom(maxSize) {
+	return parseInt(Math.random() * maxSize); // parse intiger; maxSize is 50
+}
+
+function loop() { // here I develop functionalities and add features
+	if (new Date().getTime() - lastLoopRun > 40) {
+		updatePositions();
+		handleControls();
+		checkCollisions();
+
+		addEnemy();
+
+		showSprites();
+		
+		lastLoopRun = new Date().getTime();
+		iterations++;
+	}
+	setTimeout('loop();', 2); // it calls the loop every 2 miliseconds
+}
+
+document.onkeydown = function(evt) { // event which happens when someone presses a key
+	toggleKey(evt.keyCode, true);
+};
+
+document.onkeyup = function(evt) {
+	toggleKey(evt.keyCode, false);
+};
+
+// POSITION - implementing the position of the character
+
+var hero = createSprite('hero', 250, 460, 20, 20);
+var laser = createSprite('laser', 0, -120, 2, 50);
+
+
+loop(); // when loop is called, it checks the if statement from line 85
+
+</script>
+</body>
+</html>
